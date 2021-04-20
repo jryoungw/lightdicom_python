@@ -33,7 +33,7 @@ class LightDCMClass():
         return len(self.file)
 
     def _exam_file(self, file, force):
-        preamble = b'\x00'*128
+        preamble = bytes([0])*128
         if file[:128] is not preamble:
             if self.print_warning is True:
                 print(f"For {self.path}, first 128 bytes are not zeros. This is not usual DICOM type. Handle this file carefully.")
@@ -93,13 +93,24 @@ class LightDCMClass():
                 else:
                     idx = idx+20
             else:
-                if dtype in [b'OB', b'OW', b'SQ', b'UN']:
+                if dtype in [b'SQ', b'UN']:
                     reserved = self.file[idx+6:idx+8]
                     vl = self.file[idx+8:idx+12]
                     if find_tag==tag:
                         return {'tag': tag, 'dtype': dtype, 'reserved': reserved, 'length': vl, 'value': self.file[idx+12:idx+12+self._get_vr_length(vl)]}
                     else:
                         idx = idx+12+self._get_vr_length(vl)
+                elif dtype in [b'OB', b'OW']:
+                    if find_tag == tag:
+                        idx = idx+4
+                        start_idx = idx
+                        while True:
+                            idx = idx + 2
+                            dtype_ = self.file[idx:idx+2]
+                            if dtype_ in self.dtype:
+                                return {'tag': tag, 'dtype': dtype, 'length': idx-12-start_idx, 'value': self.file[start_idx+8:idx-4]}
+                    else:
+                        idx = idx + 4
                 else:
                     vl = self.file[idx+6:idx+8]
                     if find_tag==tag:
