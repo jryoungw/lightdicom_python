@@ -10,6 +10,7 @@ class LightDCMClass():
         self.print_warning=True
         self.force=False
         self.endian='Little'
+        self.file = None
         self.dtype = [b'CS', b'SH', b'LO', b'ST', b'LT', b'UT', b'AE', b'PN', b'UI', b'UID', b'DA', \
                       b'TM', b'DT', b'AS', b'IS', b'DS', b'SS', b'US', b'SL', b'UL', b'AT', \
                       b'FL', b'FD', b'OB', b'OW', b'OF', b'SQ', b'UN']
@@ -35,9 +36,9 @@ class LightDCMClass():
         return len(self.file)
 
     def _exam_file(self, file, force):
-        preamble = b'\x00'*128
-        if file[:128] is not preamble:
-            if self.print_warning is True:
+        preamble = bytes([0])*128
+        if file[:128] != preamble:
+            if self.print_warning == True:
                 print(f"For {self.path}, first 128 bytes are not zeros. This is not usual DICOM type. Handle this file carefully.")
             else:
                 pass
@@ -102,7 +103,9 @@ class LightDCMClass():
                 return np.sum(slices)
 
 
-    def get_data(self, tag):
+    def get_data(self, tag, path=None):
+        if self.file == None:
+            self.lightRead(path)
         tag = tag.replace(' ', '')
         idx = 132
         while True:
