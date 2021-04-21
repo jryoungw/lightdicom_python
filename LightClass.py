@@ -103,6 +103,7 @@ class LightDCMClass():
 
 
     def get_data(self, tag):
+        tag = tag.replace(' ', '')
         idx = 132
         while True:
             find_tag = self._maketag(self.file[idx:idx+4], idx)
