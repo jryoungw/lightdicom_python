@@ -1,6 +1,8 @@
 from Errors import LightError
 from UID import UID_dictionary
 
+import numpy as np
+
 class LightDCMClass():
     def __init__(self, **kwargs):
         self.path = None
@@ -88,62 +90,17 @@ class LightDCMClass():
             alphabet = {'a':10, 'b':11, 'c':12, 'd':13, 'e':14, 'f':15}
             return alphabet[string]
 
-    def _OBOW_vr(self, bytestring):
-        a, b = str(bytestring[0:2]), str(bytestring[2:4])
-        backslash = a[2]
-        a = a[2:-1].split('\\x')
-        b = b[2:-1].split('\\x')
-        if a[0] == '' and len(a) == 2:
-            x, y = a[1][-1], a[1][:2]
-        elif a[0] == '' and len(a) == 3:
-            _, y, x = a
-        else:
-            assert len(a) == 2
-            y, x = a
-
-        if b[0] == '' and len(b) == 2:
-            z, w = b[1][-1], b[1][:2]
-        elif b[0] == '' and len(b) == 3:
-            _, w, z = b
-        else:
-            assert len(b) == 2
-            w, z = a
-        if x == '00':
-            x = ''
-        elif x[0] == '0':
-            x = x[1]
-        if y == '00':
-            y = ''
-        elif y[0] == '0':
-            y = y[1]
-        if z == '00':
-            z = ''
-        elif z[0] == '0':
-            z = z[1]
-        if w == '00':
-            w = ''
-        elif w[0] == '0':
-            w = w[1]
-        xyzw = [x,y,z,w]
-        for i in range(len(xyzw)):
-            elem = xyzw[i]
-            if len(elem)>1:
-                xyzw[i] = b'\\x'+bytes(xyzw[i], 'utf-8')
+    def _OBOW_vr(self, bytestring, tag):
+        slices = []
+        bytestring = bytes(bytestring)
+        for i in range(len(bytestring)//2):
+            if tag=='7fe0,0010':
+                converted = (bytes(reversed(bytestring)).hex())
+                return int(converted, 16)
             else:
-                xyzw[i] = bytes(xyzw[i], 'utf-8')
-        print(xyzw)
-        merged = xyzw[0] + xyzw[1] + xyzw[2] + xyzw[3]
-        merged = merged.decode('unicode-escape').encode('ISO-8859-1')
-        print(merged)
-        if len(merged)==1:
-            merged = str(int(merged))
-        else:
-            merged = merged.hex()
-        print(merged)
-        sum = 0
-        for i in (range(len(merged))):
-            sum += (16**(len(merged)-i-1)) * self._integer(merged[i])
-        return sum
+                slices.append(np.frombuffer(bytes((bytestring[2*i:2*(i+1)])), np.uint16))
+                return np.sum(slices)
+
 
     def get_data(self, tag):
         idx = 132
@@ -162,7 +119,7 @@ class LightDCMClass():
                     vl = self.file[idx+8:idx+12]
                     
                     if dtype in [b'OB', b'OW']:
-                        vl = self._OBOW_vr(vl)
+                        vl = self._OBOW_vr(vl, find_tag)
                     else:
                         vl = self._get_vr_length(vl)
                     if find_tag==tag:
@@ -179,3 +136,18 @@ class LightDCMClass():
 
             if idx>=len(self.file)-4:
                 raise LightError(f"No matching tag was founded for tag ({tag}) in file {self.path}.")
+                
+                
+    def _convert_to_int(self, binary):
+        binary = binary.hex()
+        return self._integer(binary)
+
+
+    def read_pixel(self):
+        d = self.get_data('7fe0,0010')
+        intercept = float(self.get_data('0028,1052')['value'])
+        slope = float(self.get_data('0028,1053')['value'])
+        width = np.frombuffer(self.get_data('0028,0010')['value'], np.uint16)[0]
+        height= np.frombuffer(self.get_data('0028,0011')['value'], np.uint16)[0]
+        npy = np.frombuffer(d['value'], np.int16)
+        return npy.reshape(width, height) * slope + intercept
