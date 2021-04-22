@@ -73,13 +73,15 @@ class LightDCMClass():
         if self.file == None:
             self.lightRead()
         if b'1.2.840.10008.1.2.1' in self.file:
-            self.endian = 'Explicit VR Little Endian'
+            self.endian = UID_dictionary['1.2.840.10008.1.2.1'][0]
         elif b'1.2.840.10008.1.2.2' in self.file:
-            self.endian = 'Explicit VR Big Endian'
+            self.endian = UID_dictionary['1.2.840.10008.1.2.2'][0]
         elif b'1.2.840.10008.1.2' in self.file:
-            self.endian = 'Implicit VR Endian'
+            self.endian = UID_dictionary['1.2.840.10008.1.2'][0]
         elif b'1.2.840.10008.1.2.1.99' in self.file:
-            self.endian = 'Deflated Explicit VR Little Endian'
+            self.endian = UID_dictionary['1.2.840.10008.1.2.1.99'][0]
+        else:
+            self.endian = 'Explicit VR Little Endian'
 
 
     def _get_vr_length(self, binary):
