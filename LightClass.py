@@ -149,8 +149,12 @@ class LightDCMClass():
 
     def read_pixel(self):
         d = self.get_data('7fe0,0010')
-        intercept = float(self.get_data('0028,1052')['value'])
-        slope = float(self.get_data('0028,1053')['value'])
+        try:
+            intercept = float(self.get_data('0028,1052')['value'])
+            slope = float(self.get_data('0028,1053')['value'])
+        except:
+            intercept = 0
+            slope = 1
         width = np.frombuffer(self.get_data('0028,0010')['value'], np.uint16)[0]
         height= np.frombuffer(self.get_data('0028,0011')['value'], np.uint16)[0]
         npy = np.frombuffer(d['value'], np.int16)
