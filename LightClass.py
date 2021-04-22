@@ -9,7 +9,7 @@ class LightDCMClass():
         self.Little_Endian=True
         self.print_warning=True
         self.force=False
-        self.endian='Little'
+        self.endian=None
         self.file = None
         self.dtype = [b'CS', b'SH', b'LO', b'ST', b'LT', b'UT', b'AE', b'PN', b'UI', b'UID', b'DA', \
                       b'TM', b'DT', b'AS', b'IS', b'DS', b'SS', b'US', b'SL', b'UL', b'AT', \
@@ -62,20 +62,25 @@ class LightDCMClass():
                 ret.append(str(l))
             else:
                 ret.append()
-        if self.endian=='Little':
+        if 'Little' in self.endian:
             return f'{ret[1]}{ret[0]},{ret[3]}{ret[2]}'
-        if self.endian=='Big':
+        elif 'Big' in self.endian:
             return f'{ret[0]}{ret[1]},{ret[2]}{ret[3]}'
+        else:
+            return f'{ret[1]}{ret[0]},{ret[3]}{ret[2]}'
 
-    def _check_endian(self, file):
-        if b'1.2.840.10008.1.2.1' in string:
+    def _check_endian(self):
+        if self.file == None:
+            self.lightRead()
+        if b'1.2.840.10008.1.2.1' in self.file:
             self.endian = 'Explicit VR Little Endian'
-        elif b'1.2.840.10008.1.2.2' in string:
+        elif b'1.2.840.10008.1.2.2' in self.file:
             self.endian = 'Explicit VR Big Endian'
-        elif b'1.2.840.10008.1.2' in string:
+        elif b'1.2.840.10008.1.2' in self.file:
             self.endian = 'Implicit VR Endian'
-        elif b'1.2.840.10008.1.2.1.99' in string:
+        elif b'1.2.840.10008.1.2.1.99' in self.file:
             self.endian = 'Deflated Explicit VR Little Endian'
+
 
     def _get_vr_length(self, binary):
         li = list(binary)
@@ -108,35 +113,73 @@ class LightDCMClass():
             self.lightRead(path)
         tag = tag.replace(' ', '')
         idx = 132
+        self._check_endian()
         while True:
             find_tag = self._maketag(self.file[idx:idx+4], idx)
-            dtype = self.file[idx+4:idx+6]
-            if find_tag == '0008,1140':
-                if tag == '0008,1140':
-                    vl = self.file[idx+8:idx+12]
-                    return {'tag': tag, 'dtype': dtype, 'length': vl, 'value': self.file[idx+12:idx+12+8]}
+            if 'Explicit' in self.endian:
+                dtype = self.file[idx+4:idx+6]
+                if find_tag == '0008,1140':
+                    if tag == '0008,1140':
+                        vl = self.file[idx+8:idx+12]
+                        return {'tag': tag, 'dtype': dtype, 'length': vl, 'value': self.file[idx+12:idx+12+8]}
+                    else:
+                        idx = idx+20
                 else:
-                    idx = idx+20
-            else:
-                if dtype in [b'OB', b'OW', b'SQ', b'UN']:
-                    reserved = self.file[idx+6:idx+8]
-                    vl = self.file[idx+8:idx+12]
+                    if dtype in [b'OB', b'OW', b'SQ', b'UN']:
+                        reserved = self.file[idx+6:idx+8]
+                        vl = self.file[idx+8:idx+12]
+
+                        if dtype in [b'OB', b'OW']:
+                            vl = self._OBOW_vr(vl, find_tag)
+                        else:
+                            vl = self._get_vr_length(vl)
+                        if find_tag==tag:
+                            return {'tag': tag, 'dtype': dtype, 'reserved': reserved, 'length': vl, 'value': self.file[idx+12:idx+12+vl]}
+                        else:
+                            idx = idx+12+vl
+                    else:
+                        vl = self.file[idx+6:idx+8]
+                        vl = self._get_vr_length(vl)
+                        if find_tag==tag:
+                            return {'tag': tag, 'dtype': dtype, 'length': vl, 'value': self.file[idx+8 :idx+8+vl]}
+                        else:
+                            idx = idx+8+vl
+                            
+            if 'Implicit' in self.endian:
+                if find_tag == '0008,1140':
+                    if tag == '0008,1140':
+                        vl = self.file[idx+8:idx+12]
+                        return {'tag': tag, 'dtype': dtype, 'length': vl, 'value': self.file[idx+12:idx+12+8]}
+                    else:
+                        idx = idx+20
+                else:
+                    try:
+                        if int(find_tag[:4])<8:
+                            dummy = 0
+                            vl = self.file[idx+6:idx+8+dummy]
+                        else:
+                            dummy = 2
+                            vl = self.file[idx+4:idx+6+dummy]
+                    except:
+                        dummy = 2
+                        vl = self.file[idx+4:idx+6+dummy]
                     
-                    if dtype in [b'OB', b'OW']:
+                    if find_tag=='7fe0,0010':
                         vl = self._OBOW_vr(vl, find_tag)
+                        value = self.file[idx+8: idx+8+vl]
+                        return {'tag': tag, 'length': vl, 'value': np.frombuffer(value, np.int16)}
                     else:
                         vl = self._get_vr_length(vl)
                     if find_tag==tag:
-                        return {'tag': tag, 'dtype': dtype, 'reserved': reserved, 'length': vl, 'value': self.file[idx+12:idx+12+vl]}
+                        return {'tag': tag, 'length': vl, 'value': self.file[idx+8: idx+8+vl]}
                     else:
-                        idx = idx+12+vl
-                else:
-                    vl = self.file[idx+6:idx+8]
-                    vl = self._get_vr_length(vl)
-                    if find_tag==tag:
-                        return {'tag': tag, 'dtype': dtype, 'length': vl, 'value': self.file[idx+8 :idx+8+vl]}
-                    else:
-                        idx = idx+8+vl
+                        try:
+                            if int(find_tag[:4])<8:
+                                idx = idx+8+vl+dummy
+                            else:
+                                idx = idx+6+vl+dummy
+                        except:
+                            idx = idx+6+dummy+vl
 
             if idx>=len(self.file)-4:
                 raise LightError(f"No matching tag was founded for tag ({tag}) in file {self.path}.")
