@@ -2,6 +2,7 @@ from Errors import LightError
 from UID import UID_dictionary
 
 import numpy as np
+import os
 
 class LightDCMClass():
     def __init__(self, **kwargs):
@@ -111,6 +112,8 @@ class LightDCMClass():
 
 
     def get_data(self, tag, path=None):
+        if not os.path.isfile(self.path):
+            raise LightError(f"{self.path} does not exist. Check your file path")
         if self.file == None:
             self.lightRead(path)
         tag = tag.replace(' ', '')
