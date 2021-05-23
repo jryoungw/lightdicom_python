@@ -1,4 +1,4 @@
-# lightdicom
+# LightDICOM
 
 ## Basic Usage
 
