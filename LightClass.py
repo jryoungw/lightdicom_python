@@ -207,3 +207,84 @@ class LightDCMClass():
         height= np.frombuffer(self.get_data('0028,0011')['value'], np.uint16)[0]
         npy = np.frombuffer(d['value'], np.int16)
         return npy.reshape(width, height) * slope + intercept
+    
+    
+    def read_all(self, with_pixel=True, resize_pixel=True):
+        if not os.path.isfile(self.path):
+            raise LightError(f"{self.path} does not exist. Check your file path")
+        if self.file == None:
+            self.lightRead(path)
+        idx = 132
+        self._check_endian()
+        all_dict = {}
+        while True:
+            find_tag = self._maketag(self.file[idx:idx+4], idx)
+            if 'Explicit' in self.endian:
+                dtype = self.file[idx+4:idx+6]
+                if find_tag == '0008,1140':
+                    vl = self.file[idx+8:idx+12]
+                    all_dict[find_tag]=self.file[idx+12:idx+12+8]
+                    idx = idx+20
+                else:
+                    if dtype in [b'OB', b'OW', b'SQ', b'UN']:
+                        reserved = self.file[idx+6:idx+8]
+                        vl = self.file[idx+8:idx+12]
+
+                        if dtype in [b'OB', b'OW']:
+                            vl = self._OBOW_vr(vl, find_tag)
+                        else:
+                            vl = self._get_vr_length(vl)
+                        all_dict[find_tag]=self.file[idx+12:idx+12+vl]
+                        idx = idx+12+vl
+                    else:
+                        vl = self.file[idx+6:idx+8]
+                        vl = self._get_vr_length(vl)
+                        all_dict[find_tag]=self.file[idx+8 :idx+8+vl]
+                        idx = idx+8+vl
+                            
+            if 'Implicit' in self.endian:
+                if find_tag == '0008,1140':
+                    vl = self.file[idx+8:idx+12]
+                    all_dict[find_tag]=self.file[idx+12:idx+12+8]
+                    idx = idx+20
+                else:
+                    try:
+                        if int(find_tag[:4])<8:
+                            dummy = 0
+                            vl = self.file[idx+6:idx+8+dummy]
+                        else:
+                            dummy = 2
+                            vl = self.file[idx+4:idx+6+dummy]
+                    except:
+                        dummy = 2
+                        vl = self.file[idx+4:idx+6+dummy]
+                    
+                    if find_tag=='7fe0,0010':
+                        if with_pixel:
+                            if resize_pixel:
+                                vl = self._OBOW_vr(vl, find_tag)
+                                all_dict[find_tag] = self.read_pixel()
+                            else:
+                                vl = self._OBOW_vr(vl, find_tag)
+                                value = self.file[idx+8: idx+8+vl]
+                                all_dict[find_tag]=np.frombuffer(value, np.int16)
+                        else:
+                            vl = self._OBOW_vr(vl, find_tag)
+                            all_dict[find_tag] = ''
+                            
+                    else:
+                        vl = self._get_vr_length(vl)
+                    
+                        all_dict[find_tag]=self.file[idx+8: idx+8+vl]
+                    
+                    try:
+                        if int(find_tag[:4])<8:
+                            idx = idx+8+vl+dummy
+                        else:
+                            idx = idx+6+vl+dummy
+                    except:
+                        idx = idx+6+dummy+vl
+            if idx == len(self.file):
+                return all_dict
+            if idx>=len(self.file)-4:
+                raise LightError(f"No matching tag was founded for tag ({tag}) in file {self.path}.")
