@@ -1,6 +1,6 @@
 # LightDICOM
 
-If you are native Korean, read [한국어 README.md](https://github.com/jryoungw/lightdicom/blob/main/README_KOR.md)
+If you are native Korean, read [한국어 README](https://github.com/jryoungw/lightdicom/blob/main/README_KOR.md)
 
 ## Basic Usage
 
