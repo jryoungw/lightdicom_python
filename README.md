@@ -1,5 +1,7 @@
 # LightDICOM
 
+LightDICOM is Python3 DICOM package fast as light, light as feather. If you find any bug or want some extra function, contact me : ryoungwoo.jang@vuno.co
+
 If you are native Korean, read [한국어 README](https://github.com/jryoungw/lightdicom/blob/main/README_KOR.md)
 
 ## Basic Usage
