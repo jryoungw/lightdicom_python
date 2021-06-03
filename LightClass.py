@@ -206,7 +206,7 @@ class LightDCMClass():
         width = np.frombuffer(self.get_data('0028,0010')['value'], np.uint16)[0]
         height= np.frombuffer(self.get_data('0028,0011')['value'], np.uint16)[0]
         npy = np.frombuffer(d['value'], np.int16)
-        return npy.reshape(width, height) * slope + intercept
+        return npy.reshape(width, height, -1).squeeze() * slope + intercept
     
     
     def read_all(self, with_pixel=True, resize_pixel=True):
