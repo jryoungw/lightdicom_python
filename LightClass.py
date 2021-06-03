@@ -10,7 +10,7 @@ class LightDCMClass():
         self.Little_Endian=True
         self.print_warning=True
         self.force=False
-        self.endian=None
+        self.endian='Implicit VR Little Endian'
         self.file = None
         self.dtype = [b'CS', b'SH', b'LO', b'ST', b'LT', b'UT', b'AE', b'PN', b'UI', b'UID', b'DA', \
                       b'TM', b'DT', b'AS', b'IS', b'DS', b'SS', b'US', b'SL', b'UL', b'AT', \
