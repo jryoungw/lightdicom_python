@@ -213,7 +213,7 @@ class LightDCMClass():
         if not os.path.isfile(self.path):
             raise LightError(f"{self.path} does not exist. Check your file path")
         if self.file == None:
-            self.lightRead(path)
+            self.lightRead(self.path)
         idx = 132
         self._check_endian()
         all_dict = {}
@@ -286,5 +286,3 @@ class LightDCMClass():
                         idx = idx+6+dummy+vl
             if idx == len(self.file):
                 return all_dict
-            if idx>=len(self.file)-4:
-                raise LightError(f"No matching tag was founded for tag ({tag}) in file {self.path}.")
