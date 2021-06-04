@@ -6,7 +6,7 @@ LightDICOM은 빠르고(like light), 가벼운(light) Python DICOM 패키지입�
 
 ## 기본 사용법
 
-```
+```python
 from LightClass import LightDCMClass
 
 lc = LightDCMClass()
@@ -17,7 +17,7 @@ npy = lc.read_pixel() # Read pixel values
 
 혹은
 
-```
+```python
 from LightClass import LightDCMClass
 
 lc = LightDCMClass(path=path_to_dicom)
@@ -27,7 +27,7 @@ npy = lc.read_pixel() # Read pixel values
 
 ## 한 번에 모든 DICOM header를 읽는 방법은?
 
-```
+```python
 lc = LightDCMClass()
 lc.path = path_to_dicom 
 # Equivalent code : lc = LightDCMClass(path=path_to_dicom)
