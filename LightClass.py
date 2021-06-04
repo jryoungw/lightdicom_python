@@ -249,7 +249,7 @@ class LightDCMClass():
                         vl = self._get_vr_length(vl)
                         all_dict[find_tag]=self.file[idx+8 :idx+8+vl]
                         idx = idx+8+vl
-                return all_dict
+
                             
             if 'Implicit' in self.endian:
                 if find_tag == '0008,1140':
@@ -293,5 +293,6 @@ class LightDCMClass():
                             idx = idx+6+vl+dummy
                     except:
                         idx = idx+6+dummy+vl
-            if idx == len(self.file):
-                return all_dict
+
+
+        return all_dict
