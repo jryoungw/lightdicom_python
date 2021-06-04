@@ -217,7 +217,7 @@ class LightDCMClass():
         idx = 132
         self._check_endian()
         all_dict = {}
-        while True:
+        while idx<len(self.file):
             find_tag = self._maketag(self.file[idx:idx+4], idx)
             if 'Explicit' in self.endian:
                 dtype = self.file[idx+4:idx+6]
