@@ -234,13 +234,22 @@ class LightDCMClass():
                             vl = self._OBOW_vr(vl, find_tag)
                         else:
                             vl = self._get_vr_length(vl)
-                        all_dict[find_tag]=self.file[idx+12:idx+12+vl]
-                        idx = idx+12+vl
+                        if find_tag == '7fe0,0010':
+                            if with_pixel:
+                                all_dict[find_tag]=self.file[idx+12:idx+12+vl]
+                                idx = idx+12+vl
+                            else:
+                                all_dict[find_tag] = b''
+                                idx = idx+12+vl
+                        else:
+                            all_dict[find_tag]=self.file[idx+12:idx+12+vl]
+                            idx = idx+12+vl
                     else:
                         vl = self.file[idx+6:idx+8]
                         vl = self._get_vr_length(vl)
                         all_dict[find_tag]=self.file[idx+8 :idx+8+vl]
                         idx = idx+8+vl
+                return all_dict
                             
             if 'Implicit' in self.endian:
                 if find_tag == '0008,1140':
