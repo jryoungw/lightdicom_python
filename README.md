@@ -8,7 +8,7 @@ If you are native Korean, read [한국어 README](https://github.com/jryoungw/li
 
 ## Basic Usage
 
-```
+```python
 from LightClass import LightDCMClass
 
 lc = LightDCMClass()
@@ -19,7 +19,7 @@ npy = lc.read_pixel() # Read pixel values
 
 Or
 
-```
+```python
 from LightClass import LightDCMClass
 
 lc = LightDCMClass(path=path_to_dicom)
@@ -29,7 +29,7 @@ npy = lc.read_pixel() # Read pixel values
 
 ## How to read all headers and their values?
 
-```
+```python
 lc = LightDCMClass()
 lc.path = path_to_dicom 
 # Equivalent code : lc = LightDCMClass(path=path_to_dicom)
