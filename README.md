@@ -12,7 +12,7 @@ The only 3rd party dependency is `numpy`, thus **fast** and **light**.
 
 ## Basic Usage
 
-```
+```python
 from LightClass import LightDCMClass
 
 lc = LightDCMClass()
@@ -23,7 +23,7 @@ npy = lc.read_pixel() # Read pixel values
 
 Or
 
-```
+```python
 from LightClass import LightDCMClass
 
 lc = LightDCMClass(path=path_to_dicom)
