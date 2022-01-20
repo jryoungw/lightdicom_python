@@ -1,4 +1,6 @@
 from LightTag import Tag
+from Errors import LightError
+from Tags import DicomDictionary
 
 import numpy as np
 
@@ -69,12 +71,6 @@ def ifGroupLengthTag(tag:str) -> bool:
 def parseUL(value:bin, isLittle:bool) -> int:
     toInt = list(value)
     retInt = sum(toInt)
-    # if isLittle:
-    #     for idx in range(len(toInt)):
-    #         retInt += (16**idx) * toInt[2*((idx)//2) + ((idx+1)%2)]
-    # else:
-    #     for idx in range(len(toInt)):
-    #         retInt += (16**idx) * toInt[idx]
 
     return retInt
 
@@ -103,6 +99,48 @@ def _get_vr_length(binary:bin, isLittle:bool) -> int:
             s = s + li[2*((ldx)//2) + ((ldx+1)%2)]
     return s
 
+def parseUntilUID(tagClass:Tag, \
+                 file:bin,     \
+                 idx=132) -> Tag:
+    UID = None
+    while True:
+        idx = int(idx)
+        _tag = getTag(file[idx:idx+4], isLittle=True)
+
+        isGroupLengthTag = ifGroupLengthTag(_tag)
+        idx = idx + 4
+        vr = file[idx:idx+2]
+
+        # Refer "https://dicom.nema.org/dicom/2013/output/chtml/part05/chapter_7.html" for more details.
+        if vr in [b'OB', b'OW', b'OF', b'SQ', b'UT', b'UN']:
+            idx = idx + 2 + 2 # Last 2 is for reserved 2 bytes.
+            vl = file[idx:idx+4]
+            idx = idx + 4
+            vl = _OBOW_vr(vl, _tag, isLittle=True)
+        else:
+            idx = idx + 2     # There are no reseved bytes.
+            vl = file[idx:idx+2]
+            vl = _get_vr_length(vl, isLittle=True)
+            idx = idx + 2
+        value = file[idx:idx + vl]
+
+        if isGroupLengthTag:
+            assert vr == b'UL', "Value Representation (VR) should be type of UL (Unsigned Long) for Group Length Tag."+\
+                                f"Current VR : {vr}. Check your DICOM sanity."
+            value = parseUL(value, isLittle=True)
+
+        idx = idx + vl
+        tagClass[_tag] = [vr, vl, value]
+        if _tag == 131088:
+            UID = hex(_tag)
+
+        print(hex(_tag), vr, vl, value)
+        if UID is not None:
+            return tagClass, idx, UID
+
+        if idx > len(file):
+            raise LightError("This file does not follow DICOM standard protocol. Check your DICOM sanity.")
+
 def parseExplicitVRLittleEndian(tagClass:Tag, \
                                 file:bin,     \
                                 isLittle:bool,\
@@ -126,17 +164,55 @@ def parseExplicitVRLittleEndian(tagClass:Tag, \
             vl = file[idx:idx+2]
             vl = _get_vr_length(vl, isLittle=isLittle)
             idx = idx + 2
+        value = file[idx:idx + vl]
 
         if isGroupLengthTag:
-            value = file[idx:idx+vl]
-            assert vr == b'UL', "Value Representation (VR) should be type of UL (Unsigned Long). " + \
+            assert vr == b'UL', "Value Representation (VR) should be type of UL (Unsigned Long) for Group Length Tag."+\
                                 f"Current VR : {vr}. Check your DICOM sanity."
             value = parseUL(value, isLittle=isLittle)
-            idx = idx + vl
-        else:
-            value = file[idx:idx+vl]
-            idx = idx + vl
-        print("Tag :", _tag)
+
+        idx = idx + vl
         tagClass[_tag] = [vr, vl, value]
 
-        return tagClass
+        print(hex(_tag), vr, vl, value)
+        if idx == len(file):
+            return tagClass
+        if idx > len(file):
+            raise LightError("This file does not follow DICOM standard protocol. Check your DICOM sanity.")
+        # return tagClass
+
+def parseImplicitVRLittleEndian(tagClass:Tag, \
+                                file:bin,     \
+                                isLittle:bool,\
+                                idx=132) -> Tag:
+    while True:
+        idx = int(idx)
+        _tag = getTag(file[idx:idx+4], isLittle=isLittle)
+
+        isGroupLengthTag = ifGroupLengthTag(_tag)
+        idx = idx + 4
+
+        # Refer "https://dicom.nema.org/dicom/2013/output/chtml/part05/chapter_7.html" for more details.
+        print(hex(_tag))
+        vr = DicomDictionary[_tag][0]
+
+        vl = file[idx:idx+4]
+        idx = idx + 4
+        vl = _get_vr_length(vl, isLittle=isLittle)
+
+        value = file[idx:idx + vl]
+
+        if isGroupLengthTag:
+            assert vr == b'UL', "Value Representation (VR) should be type of UL (Unsigned Long) for Group Length Tag."+\
+                                f"Current VR : {vr}. Check your DICOM sanity."
+            value = parseUL(value, isLittle=isLittle)
+
+        idx = idx + vl
+        tagClass[_tag] = [vr, vl, value]
+
+        print(hex(_tag), vr, vl, value)
+        if idx == len(file):
+            return tagClass
+        if idx > len(file):
+            raise LightError("This file does not follow DICOM standard protocol. Check your DICOM sanity.")
+        # return tagClass

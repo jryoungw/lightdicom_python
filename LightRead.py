@@ -1,4 +1,5 @@
 from LightTag import Tag
+from LightParse import *
 
 class LightRead(Tag):
     def __init__(self, path, print_warning=True):
@@ -56,3 +57,6 @@ class LightRead(Tag):
                       "file carefully.")
                 else:
                     pass
+
+    def readDCM(self):
+        if

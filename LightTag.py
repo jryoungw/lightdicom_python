@@ -26,6 +26,7 @@ class Tag:
                              "          2. dcm[0x100010]\n"+\
                              "          3. dcm.PatientName")
 
+
     def __setitem__(self, key, value):
         if isinstance(key, int):
             setattr(self, self._dict[key][4], value)
