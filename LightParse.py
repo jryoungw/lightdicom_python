@@ -92,10 +92,10 @@ def _get_vr_length(binary:bin, isLittle:bool) -> int:
     li = list(binary)
     s = 0
     if isLittle:
-        for l in li:
-            s = s + l
+        for idx, l in enumerate(li):
+            s = s + l * 16**idx
     else:
-        for ldx in range(len(li)):
+        for idx, ldx in enuerate(range(len(li))):
             s = s + li[2*((ldx)//2) + ((ldx+1)%2)]
     return s
 
