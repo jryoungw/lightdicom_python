@@ -96,7 +96,8 @@ def _get_vr_length(binary:bin, isLittle:bool) -> int:
             s = s + l * 16**idx
     else:
         for idx, ldx in enuerate(range(len(li))):
-            s = s + li[2*((ldx)//2) + ((ldx+1)%2)]
+            s = s + li[2*((ldx)//2) + ((ldx+1)%2)] * \
+                16**idx
     return s
 
 def parseUntilUID(tagClass:Tag, \
