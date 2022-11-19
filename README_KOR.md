@@ -2,7 +2,7 @@
 
 LightDICOM은 빠르고(like light), 가벼운(light) Python DICOM 패키지입니다. Python3 문법으로 작성되었으며 기본 내장 패키지 이외에는 numpy에만 의존하는 독립성이 높은 DICOM 패키지입니다.
 
-사용에 대한 피드백과 문의는 ryoungwoo.jang@vuno.co 로 주세요.
+사용에 대한 피드백과 문의는 jryounw2035@gmail.com 으로 주세요.
 
 ## 기본 사용법
 
